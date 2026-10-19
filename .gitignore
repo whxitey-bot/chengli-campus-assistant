@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+
+# Streamlit 真实密钥（绝不提交）
+.streamlit/secrets.toml
+
+# 运行时数据
+chat_history.json
+streamlit.log
+test_records.txt
+
+# 本地开发/测试脚本（非应用运行所需）
+test_connection.py
+check_models.py
+run_test.py
+make_qa_excel.py
+system_prompt.txt
+template_info.txt
+
+# 平台知识库导入文件与前端页面（非本 Streamlit 应用所需）
+*.xlsx
+campus-page/
+campus-page.zip
+
+# 比赛文档（单独存放，不随应用仓库提交）
+设计文档.md
+演示视频脚本.md
