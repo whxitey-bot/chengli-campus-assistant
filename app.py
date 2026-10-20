@@ -1,6 +1,4 @@
 """界面：用 Streamlit 生成聊天页面。运行：streamlit run app.py"""
-import json
-import os
 import datetime
 import html
 import re
@@ -9,8 +7,6 @@ import streamlit as st
 
 import config
 from agent import chat_with_trace, get_client
-
-HISTORY_FILE = os.path.join(os.path.dirname(__file__), "chat_history.json")
 
 PRESET_QUESTIONS = [
     "新生报到要带哪些材料？",
@@ -233,21 +229,6 @@ def md_to_html(text: str) -> str:
     return "\n".join(out)
 
 
-def load_sessions():
-    if os.path.exists(HISTORY_FILE):
-        try:
-            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
-
-
-def save_sessions(sessions):
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(sessions, f, ensure_ascii=False, indent=2)
-
-
 def new_session():
     sid = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
     st.session_state.sessions[sid] = {
@@ -299,22 +280,10 @@ def render_bubble(role: str, content: str, trace=None):
 st.set_page_config(page_title="成理小助手", page_icon="🎓", layout="centered")
 st.markdown(MORANDI_CSS, unsafe_allow_html=True)
 
-# ============ 状态初始化 ============
+# ============ 状态初始化（每个访问者独立，仅内存，不写共享文件） ============
 if "sessions" not in st.session_state:
-    st.session_state.sessions = load_sessions()
-if "current_id" not in st.session_state:
-    st.session_state.current_id = None
-
-if st.session_state.current_id not in st.session_state.sessions:
-    if st.session_state.sessions:
-        latest = sorted(
-            st.session_state.sessions.keys(),
-            key=lambda k: st.session_state.sessions[k].get("created_at", ""),
-        )[-1]
-        st.session_state.current_id = latest
-    else:
-        st.session_state.current_id = new_session()
-        save_sessions(st.session_state.sessions)
+    st.session_state.sessions = {}
+    st.session_state.current_id = new_session()
 
 client = get_client()
 
@@ -331,7 +300,6 @@ with st.sidebar:
 
     if st.button("➕ 新建对话", use_container_width=True):
         st.session_state.current_id = new_session()
-        save_sessions(st.session_state.sessions)
         st.rerun()
 
     st.divider()
@@ -357,7 +325,6 @@ with st.sidebar:
                 del st.session_state.sessions[sid]
                 if st.session_state.current_id == sid:
                     st.session_state.current_id = None
-                save_sessions(st.session_state.sessions)
                 st.rerun()
 
     st.divider()
@@ -430,5 +397,4 @@ if prompt:
         if first_user:
             cur_sess["title"] = first_user[:16]
 
-    save_sessions(st.session_state.sessions)
     st.rerun()
