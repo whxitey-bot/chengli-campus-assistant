@@ -23,6 +23,9 @@ make_qa_excel.py
 system_prompt.txt
 template_info.txt
 
+# Claude Code 技能文件（非 Streamlit 应用运行所需）
+skills/
+
 # 平台知识库导入文件与前端页面（非本 Streamlit 应用所需）
 *.xlsx
 campus-page/

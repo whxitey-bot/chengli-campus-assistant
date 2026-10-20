@@ -1,0 +1,680 @@
+{
+  "restaurant": "芙蓉餐厅",
+  "items": [
+    {
+      "id": 1,
+      "name": "全家 FamilyMart",
+      "category": "便利店·咖啡",
+      "intro": "芙蓉食堂旁的全家便利店，提供便当、饭团、三明治、面包、零食、饮品和现磨湃客咖啡，适合简餐、加餐和买日用品。",
+      "menu": "便当、饭团、三明治、面包、零食、饮品、现磨湃客咖啡",
+      "tags": [
+        "全家",
+        "便利店",
+        "湃客咖啡",
+        "咖啡",
+        "便当",
+        "饭团",
+        "三明治",
+        "面包",
+        "零食"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image1.jpeg",
+      "group": "便利店",
+      "light": false
+    },
+    {
+      "id": 2,
+      "name": "安德鲁森 ANDERSEN",
+      "category": "烘焙",
+      "intro": "芙蓉食堂内的烘焙店，售卖面包、蛋糕、点心等，常有买 2 送 1 促销，适合早餐、下午茶选购。",
+      "menu": "面包、蛋糕、点心（常有买 2 送 1）",
+      "tags": [
+        "安德鲁森",
+        "烘焙",
+        "面包",
+        "蛋糕",
+        "点心",
+        "早餐",
+        "下午茶"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image2.jpeg",
+      "group": "烘焙甜品",
+      "light": false
+    },
+    {
+      "id": 3,
+      "name": "校园卡自助补卡充值终端",
+      "category": "服务设施",
+      "intro": "芙蓉食堂内设校园卡自助服务终端，支持校园卡自助补卡、充值；旁边食材展示柜公示采购粮油、调味品等原材料，透明可追溯。",
+      "menu": "校园卡补卡、充值自助办理",
+      "tags": [
+        "校园卡",
+        "补卡",
+        "充值",
+        "自助服务",
+        "终端"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image3.jpeg",
+      "group": "服务设施",
+      "light": false
+    },
+    {
+      "id": 4,
+      "name": "瑞幸咖啡",
+      "category": "咖啡茶饮",
+      "intro": "芙蓉食堂内的瑞幸咖啡门店，提供各类现制咖啡、果茶、小食，适合课间提神、休闲小聚。",
+      "menu": "现制咖啡、果茶、小食",
+      "tags": [
+        "瑞幸",
+        "咖啡",
+        "果茶",
+        "小食"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image4.jpeg",
+      "group": "茶饮咖啡",
+      "light": false
+    },
+    {
+      "id": 5,
+      "name": "零食有鸣",
+      "category": "零食",
+      "intro": "芙蓉食堂内的零食门店，汇集各类零食、饮料、休闲小吃，品类丰富、价格实惠。",
+      "menu": "零食、饮料、休闲小吃",
+      "tags": [
+        "零食有鸣",
+        "零食",
+        "饮料",
+        "小吃"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image5.jpeg",
+      "group": "零食",
+      "light": false
+    },
+    {
+      "id": 6,
+      "name": "成理有礼",
+      "category": "文创",
+      "intro": "芙蓉食堂内的校园文创商店，售卖成都理工大学专属文创周边，带恐龙 IP 元素，适合选购纪念礼品。",
+      "menu": "校园文创周边（恐龙 IP 元素）",
+      "tags": [
+        "成理有礼",
+        "文创",
+        "纪念品",
+        "恐龙",
+        "礼品"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image6.jpeg",
+      "group": "文创百货",
+      "light": false
+    },
+    {
+      "id": 7,
+      "name": "芒小厨 校园自选餐",
+      "category": "自选餐",
+      "intro": "自选称重 2.28 元/50g，每日现炒、不使用预制菜；中午 13:10 后、晚上 19:10 后全场 6 折，自取餐具自选菜品称重结算。",
+      "menu": "自选称重 2.28 元/50g；每日现炒；13:10/19:10 后全场 6 折",
+      "tags": [
+        "芒小厨",
+        "自选餐",
+        "称重",
+        "现炒",
+        "自选"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image7.jpeg",
+      "group": "自选餐",
+      "light": false
+    },
+    {
+      "id": 8,
+      "name": "赛百味 SUBWAY",
+      "category": "快餐轻食",
+      "intro": "主打现做三明治、沙拉，可自由搭配面包、配菜与酱料，低脂轻食选择，标语 Made Fresh，新鲜现制。",
+      "menu": "现做三明治、沙拉（自由搭配）",
+      "tags": [
+        "赛百味",
+        "SUBWAY",
+        "三明治",
+        "沙拉",
+        "轻食",
+        "低脂"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image8.jpeg",
+      "group": "快餐西式",
+      "light": true
+    },
+    {
+      "id": 9,
+      "name": "手撕鸡饭",
+      "category": "正餐",
+      "intro": "重庆风味、新鲜现做。手撕鸡饭系列与盖饭系列。",
+      "menu": "香嫩鸡丁饭 12 元、柠檬手撕鸡饭 13 元、椒麻手撕鸡饭 13 元、口水手撕鸡饭 13 元、旺卡手撕鸡饭 13 元；盖饭系列均 14 元（咖喱鸡丸、酱汁鸡肉、川香臊子肉、可乐鸡肉、红油臊子肉等）",
+      "tags": [
+        "手撕鸡",
+        "鸡丁",
+        "盖饭",
+        "重庆风味",
+        "口水鸡"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image9.jpeg",
+      "group": "正餐",
+      "price_min": 12,
+      "price_max": 14,
+      "light": false
+    },
+    {
+      "id": 10,
+      "name": "芒果美味大厨房",
+      "category": "简餐",
+      "intro": "套餐简餐，出餐快，适合赶时间的同学，支持搭配米饭。",
+      "menu": "4-5 元菜品、6 元菜品、8 元菜品（套餐简餐）",
+      "tags": [
+        "芒果",
+        "大厨房",
+        "简餐",
+        "套餐",
+        "快餐"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image10.jpeg",
+      "group": "正餐",
+      "price_min": 4,
+      "price_max": 8,
+      "light": false
+    },
+    {
+      "id": 11,
+      "name": "鲜果园·酸奶水果捞",
+      "category": "甜品",
+      "intro": "主打新鲜水果、酸奶水果捞，鲜果现选现做，清爽解腻，适合餐后甜品、加餐。",
+      "menu": "新鲜水果、酸奶水果捞（现选现做）",
+      "tags": [
+        "鲜果园",
+        "水果捞",
+        "酸奶",
+        "水果",
+        "甜品"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image11.jpeg",
+      "group": "甜品水果",
+      "light": true
+    },
+    {
+      "id": 12,
+      "name": "不负好食光",
+      "category": "基本保障餐",
+      "intro": "温馨窗口·基本保障餐，2-8 元平价菜 + 4.9 元/份套餐，固定周循环菜单，供应至中午 13:00、晚上 19:00。",
+      "menu": "2-8 元平价菜、4.9 元/份套餐；周一至周日固定菜单（回锅肉、咖喱鸡、粉蒸肉等家常菜）",
+      "tags": [
+        "不负好食光",
+        "保障餐",
+        "平价",
+        "套餐",
+        "周菜单",
+        "家常菜"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image12.jpeg",
+      "group": "保障餐",
+      "price_min": 2,
+      "price_max": 8,
+      "light": false,
+      "service_hours": "基本保障餐供应至中午13:00、晚上19:00"
+    },
+    {
+      "id": 13,
+      "name": "芙蓉餐厅意见建议栏",
+      "category": "服务",
+      "intro": "就餐遇到问题、菜品改进、服务建议均可反馈。",
+      "menu": "反馈：郭伟 13488888432、杨惠娟 13576013721、杨志鑫 15837693625",
+      "tags": [
+        "意见",
+        "建议",
+        "反馈",
+        "投诉",
+        "负责人",
+        "联系方式",
+        "意见建议栏"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image13.jpeg",
+      "group": "服务设施",
+      "light": false
+    },
+    {
+      "id": 14,
+      "name": "三白窗口",
+      "category": "早餐",
+      "intro": "早餐窗口，供应 7:00-8:30，仅限本校学生卡、教职工卡支付。",
+      "menu": "白鸡蛋 0.7 元、手工馒头 0.5 元、白粥 0.3 元；早餐系列：鲜肉包 2 元、酱肉包 2.5 元、茶叶蛋 1.5 元等；粥品：小米南瓜粥 2.5 元、皮蛋瘦肉粥 3 元等；现磨豆浆 2 元",
+      "tags": [
+        "三白",
+        "早餐",
+        "包子",
+        "馒头",
+        "鸡蛋",
+        "粥",
+        "豆浆",
+        "油条"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image14.jpeg",
+      "group": "早餐",
+      "price_min": 0.3,
+      "price_max": 5.5,
+      "light": false,
+      "service_hours": "7:00-8:30（仅限学生卡/教职工卡）"
+    },
+    {
+      "id": 15,
+      "name": "中式套餐",
+      "category": "正餐",
+      "intro": "多种菜品随心搭配的套餐窗口。",
+      "menu": "两素套餐（可双拼）9 元、一荤两素 10 元、两荤一素 13 元、三荤 15 元",
+      "tags": [
+        "中式套餐",
+        "套餐",
+        "荤素",
+        "搭配",
+        "盒饭"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image15.jpeg",
+      "group": "正餐",
+      "price_min": 9,
+      "price_max": 15,
+      "light": false
+    },
+    {
+      "id": 16,
+      "name": "熊叫虾仁捞饭",
+      "category": "正餐",
+      "intro": "主打虾仁捞饭与各类盖饭。",
+      "menu": "麻辣虾仁捞饭 15 元、金汤虾仁捞饭 15 元、土豆牛腩饭 15 元、黑椒肉柳饭 13 元、鲍汁茄子饭 11 元、菠萝咕噜肉饭 13 元、椒麻辣子鸡饭 13 元等",
+      "tags": [
+        "熊叫",
+        "虾仁",
+        "捞饭",
+        "盖饭",
+        "牛腩"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image16.jpeg",
+      "group": "正餐",
+      "price_min": 11,
+      "price_max": 15,
+      "light": false
+    },
+    {
+      "id": 17,
+      "name": "川渝小面",
+      "category": "面食",
+      "intro": "清红汤系列小面、米线、酸辣粉。",
+      "menu": "招牌豌杂面/米线 10/13 元、重庆杂酱面 10/13 元、红烧排骨面 11/13 元、红烧肥肠面 11/13 元、重庆小面 7/9 元、原味酸辣粉 8/10 元",
+      "tags": [
+        "川渝小面",
+        "小面",
+        "面",
+        "米线",
+        "酸辣粉",
+        "豌杂",
+        "杂酱面"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image17.jpeg",
+      "group": "面食",
+      "price_min": 7,
+      "price_max": 13,
+      "light": false
+    },
+    {
+      "id": 18,
+      "name": "蜜雪冰城",
+      "category": "茶饮",
+      "intro": "平价茶饮、冰淇淋连锁，支持扫码点单。",
+      "menu": "柠檬水、珍珠奶茶、摩天脆脆冰淇淋、果茶等",
+      "tags": [
+        "蜜雪冰城",
+        "茶饮",
+        "奶茶",
+        "冰淇淋",
+        "柠檬水"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image18.jpeg",
+      "group": "茶饮咖啡",
+      "light": false
+    },
+    {
+      "id": 19,
+      "name": "名创优品 MINISO",
+      "category": "百货",
+      "intro": "售卖日用百货、文具、饰品、毛绒玩偶、收纳、美妆小物、零食等。",
+      "menu": "日用百货、文具、饰品、毛绒玩偶、收纳、美妆小物、零食",
+      "tags": [
+        "名创优品",
+        "MINISO",
+        "百货",
+        "文具",
+        "生活用品"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image19.jpeg",
+      "group": "文创百货",
+      "light": false
+    },
+    {
+      "id": 20,
+      "name": "老上海馄饨",
+      "category": "面食",
+      "intro": "抄手、馄饨小份/大份可选，口味丰富。",
+      "menu": "抄手/馄饨 10 元(小份)/12 元(大份)：老麻、藤椒、海味、金汤、骨汤、泡椒、酸菜、番茄、红油干拌等；油炸鸡蛋 2 元",
+      "tags": [
+        "老上海馄饨",
+        "馄饨",
+        "抄手",
+        "云吞"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image20.jpeg",
+      "group": "面食",
+      "price_min": 10,
+      "price_max": 12,
+      "light": false
+    },
+    {
+      "id": 21,
+      "name": "煎饼道",
+      "category": "小吃",
+      "intro": "手工煎饼、炸鸡炸货、凉皮、现熬粥饮。",
+      "menu": "孜然里脊煎饼 12.9 元、脆嫩鲜蔬煎饼 9.9 元、黑椒牛肉煎饼 18.9 元；脆皮炸鸡腿 5.9 元/只；秘制凉皮 13 元；现熬红豆汤 4.9 元",
+      "tags": [
+        "煎饼道",
+        "煎饼",
+        "炸鸡",
+        "凉皮",
+        "小吃",
+        "炸货"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image21.jpeg",
+      "group": "小吃",
+      "price_min": 9.9,
+      "price_max": 18.9,
+      "light": false
+    },
+    {
+      "id": 22,
+      "name": "SALAD Season 四季轻食",
+      "category": "轻食",
+      "intro": "自选称重轻食，主打热轻食、肉酱意面。",
+      "menu": "自选健康餐 1.88 元/50g、杂粮米 2 元管饱；套餐：低脂香煎鸡扒 15.9 元、照烧鸡肉 15.9 元、经典牛肉饼 16.9 元、海苔金枪鱼 17.9 元",
+      "tags": [
+        "SALAD",
+        "四季轻食",
+        "轻食",
+        "沙拉",
+        "减脂",
+        "健康餐",
+        "鸡扒"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image22.jpeg",
+      "group": "轻食",
+      "price_min": 15.9,
+      "price_max": 17.9,
+      "light": true
+    },
+    {
+      "id": 23,
+      "name": "麦当劳 McDonald's",
+      "category": "快餐",
+      "intro": "西式快餐窗口，支持自助点单、扫码点餐。",
+      "menu": "汉堡、薯条、炸鸡、麦旋风、可乐等",
+      "tags": [
+        "麦当劳",
+        "汉堡",
+        "薯条",
+        "炸鸡",
+        "快餐",
+        "麦旋风"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image23.jpeg",
+      "group": "快餐西式",
+      "light": false
+    },
+    {
+      "id": 24,
+      "name": "熊小爷饺子",
+      "category": "饺子",
+      "intro": "主打饺子、云吞、拌面，做法可选干拌/白灼/汤饺。",
+      "menu": "饺子 9.9/14/16 元（玉米鲜肉、韭菜鲜肉等）；鲜肉云吞 14 元、鲜蟹蟹籽云吞 18 元；套餐 13.9-18.9 元；茶叶蛋 2 元、卤鸡腿 6 元",
+      "tags": [
+        "熊小爷",
+        "饺子",
+        "云吞",
+        "拌面",
+        "抄手"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image24.jpeg",
+      "group": "面食",
+      "price_min": 9.9,
+      "price_max": 18.9,
+      "light": false
+    },
+    {
+      "id": 25,
+      "name": "帽大仙冒菜",
+      "category": "冒菜",
+      "intro": "全场荤素 1.98 元/两，现烫现煮，麻辣鲜香，汤底口味可选。",
+      "menu": "荤素 1.98 元/两；单人纯素 12 元、单人荤素 15 元、双人荤素 32 元、冒烤鸭 20 元、酸辣粉 9.9 元",
+      "tags": [
+        "帽大仙",
+        "冒菜",
+        "麻辣烫",
+        "麻辣",
+        "荤素"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image25.jpeg",
+      "group": "正餐",
+      "price_min": 9.9,
+      "price_max": 20,
+      "light": false
+    },
+    {
+      "id": 26,
+      "name": "五谷渔粉",
+      "category": "粉面",
+      "intro": "同时售卖正宗柳州螺蛳粉，先选汤底再选浇头。",
+      "menu": "黑鱼鱼粉 14 元、肥牛粉 15 元、小酥肉粉 13 元；螺蛳粉单品 13-20 元（炸蛋、鸡爪、猪脚等）；套餐 15-18 元",
+      "tags": [
+        "五谷渔粉",
+        "渔粉",
+        "螺蛳粉",
+        "米粉",
+        "柳州",
+        "肥牛粉"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image26.jpeg",
+      "group": "面食",
+      "price_min": 13,
+      "price_max": 20,
+      "light": false
+    },
+    {
+      "id": 27,
+      "name": "斗鸣鸡公煲",
+      "category": "正餐",
+      "intro": "非遗项目，石锅系列，小份/大份可选。",
+      "menu": "石锅鸡公煲 18/38 元、石锅虾滑煲 29/49 元、石锅排骨煲 28/48 元、石锅肥肠煲 39/59 元；单人餐 24.8 元、双人餐 39.8 元",
+      "tags": [
+        "斗鸣",
+        "鸡公煲",
+        "石锅",
+        "非遗",
+        "煲"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image27.jpeg",
+      "group": "正餐",
+      "price_min": 18,
+      "price_max": 59,
+      "light": false
+    },
+    {
+      "id": 28,
+      "name": "花雕醉鸡",
+      "category": "正餐",
+      "intro": "主打鲜鸡现炒，招牌青花椒花雕醉鸡锅。",
+      "menu": "青花椒醉鸡锅 1-2 人 57 元、2-3 人 76 元；十年沉醉花雕醉鸡煲 1-2 人 57 元、2-3 人 76 元",
+      "tags": [
+        "花雕醉鸡",
+        "醉鸡",
+        "花雕",
+        "锅",
+        "青花椒"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image28.jpeg",
+      "group": "正餐",
+      "price_min": 57,
+      "price_max": 76,
+      "light": false
+    },
+    {
+      "id": 29,
+      "name": "兵哥豌豆面",
+      "category": "面食",
+      "intro": "招牌豌杂面，可免费续面。",
+      "menu": "招牌豌杂面 一两 10 元/二两 12 元；麻辣小面 7/9 元、红烧牛肉面 12/15 元；全家福套餐 18 元；配面搭子桂花冰粉 7 元、成都小酥肉 9 元",
+      "tags": [
+        "兵哥",
+        "豌豆面",
+        "豌杂面",
+        "小面",
+        "牛肉面"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image29.jpeg",
+      "group": "面食",
+      "price_min": 7,
+      "price_max": 18,
+      "light": false
+    },
+    {
+      "id": 30,
+      "name": "蜀湘曹氏鸭脖",
+      "category": "卤味",
+      "intro": "辣卤现捞，辣度可选微微辣到特辣，可自选荤素拼一锅。",
+      "menu": "鸭头 5.5 元、鸭脖 5.5 元、鸡腿 5.5 元、鸭架 2.8 元、鸡爪 2.8 元；素菜丸子 1.9 元/50g；米饭 1 元",
+      "tags": [
+        "蜀湘",
+        "曹氏",
+        "鸭脖",
+        "辣卤",
+        "卤味",
+        "鸭头"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image30.jpeg",
+      "group": "小吃",
+      "price_min": 2.8,
+      "price_max": 5.5,
+      "light": false
+    },
+    {
+      "id": 31,
+      "name": "AI 芯炒擂椒饭",
+      "category": "正餐",
+      "intro": "主打擂椒小炒套餐饭。",
+      "menu": "香干肉丝 12 元、火爆肥肠 14 元、擂椒暴打小炒肉 13 元、回锅肉 12 元、火爆鸡杂 11 元、香菇滑鸡 11 元、火爆猪肝 9 元",
+      "tags": [
+        "AI芯炒",
+        "擂椒饭",
+        "套餐饭",
+        "盖饭",
+        "小炒肉"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image31.jpeg",
+      "group": "正餐",
+      "price_min": 9,
+      "price_max": 14,
+      "light": false
+    },
+    {
+      "id": 32,
+      "name": "张家川兰州牛肉拉面",
+      "category": "面食",
+      "intro": "经典拉面、刀削面、米线、炒饭，打包另收 1 元。",
+      "menu": "牛肉拉面 9/11 元、泡椒鸡杂拉面 9/11 元；牛肉炒拉面 13 元；牛肉米粉 15 元；孜然牛肉炒饭 10 元；牛肉水饺 11/13 元",
+      "tags": [
+        "张家川",
+        "兰州",
+        "牛肉面",
+        "拉面",
+        "刀削面",
+        "炒饭"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image32.jpeg",
+      "group": "面食",
+      "price_min": 9,
+      "price_max": 15,
+      "light": false
+    },
+    {
+      "id": 33,
+      "name": "牛伯叔铁锅炖",
+      "category": "正餐",
+      "intro": "铁锅炖，锅边贴饼，分量扎实，口味可选香辣/酱香。",
+      "menu": "招牌地锅鸡 12.9 元、地锅黄金酥肉 13 元、地锅卤香牛杂 16 元、非遗椒麻鸡 14.9 元、人气地锅鱼 15 元；米饭饮品免费",
+      "tags": [
+        "牛伯叔",
+        "铁锅炖",
+        "地锅",
+        "锅",
+        "炖菜"
+      ],
+      "featured": false,
+      "image": "assets/canteen/image33.jpeg",
+      "group": "正餐",
+      "price_min": 11,
+      "price_max": 16,
+      "light": false
+    },
+    {
+      "id": 34,
+      "name": "永川牛肉饭",
+      "category": "正餐",
+      "intro": "牛肉现煎，米饭免费续，自助小菜、汤品饮品免费。",
+      "menu": "铁板肥牛饭 19.9 元、茄香肥牛饭 22 元、麻婆豆腐肥牛饭 23 元；盖浇饭：鱼香肉丝 15 元、红烧肉 19 元、咖喱鸡排饭 23 元、咖喱肥牛饭 26 元；蒸蛋 5 元、炸鸡排 11 元",
+      "tags": [
+        "永川",
+        "牛肉饭",
+        "肥牛饭",
+        "盖浇饭",
+        "铁板"
+      ],
+      "featured": true,
+      "image": "assets/canteen/image34.jpeg",
+      "group": "正餐",
+      "price_min": 15,
+      "price_max": 26,
+      "light": false
+    }
+  ]
+}

@@ -1,29 +1,41 @@
 """界面：用 Streamlit 生成聊天页面。运行：streamlit run app.py"""
 import datetime
 import html
+import os
 import re
 
 import streamlit as st
 
 import config
-from agent import chat_with_trace, get_client
+import lost_found
+from agent import chat_with_trace, get_client, extract_lostfound
 
 PRESET_QUESTIONS = [
     "新生报到要带哪些材料？",
-    "砚湖在哪里？有什么好玩的？",
+    "军训要准备什么？",
     "学校有哪些好吃的食堂？",
-    "最近学校有什么活动？",
-    "能带我逛逛校园吗？",
+    "芙蓉餐厅都有哪些档口？",
     "帮我做一个保研学习计划",
+    "帮我制定一个考研复习计划",
+    "我丢了校园卡，怎么办？",
+    "能带我逛逛校园吗？",
+    "砚湖在哪里？",
+    "最近学校有什么活动？",
     "今天成都天气怎么样？",
 ]
 
 TOOL_LABELS = {
     "search_faq": "📖 检索知识库",
     "search_activity": "🎪 检索校园活动",
+    "search_baoyan": "🎓 保研/考研规划",
+    "search_canteen": "🍜 检索食堂档口",
+    "canteen_overview": "🏪 食堂档口总览",
+    "canteen_light": "🥗 轻食/健康推荐",
+    "canteen_budget": "💰 按预算筛选",
     "campus_tour": "🗺️ 获取导览路线",
     "get_weather": "🌤️ 查询天气",
     "get_current_time": "🕐 获取时间",
+    "search_lostfound": "📦 检索失物招领频道",
 }
 
 
@@ -277,6 +289,401 @@ def render_bubble(role: str, content: str, trace=None):
     )
 
 
+def render_canteen_images(trace=None):
+    """在回答下方展示命中的食堂档口配图（若有）。"""
+    if not trace:
+        return
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    for t in trace:
+        tool = t.get("tool") or ""
+        if tool != "search_canteen" and not tool.startswith("canteen"):
+            continue
+        imgs = t.get("images") or []
+        if not imgs:
+            continue
+        cols = st.columns(len(imgs))
+        for col, im in zip(cols, imgs):
+            path = os.path.join(base_dir, im["image"])
+            with col:
+                st.image(path, caption=im["name"], width=220)
+
+
+def render_chat(client):
+    """智能问答视图：现有聊天流程。"""
+    cur_sess = st.session_state.sessions[st.session_state.current_id]
+    messages = cur_sess["messages"]
+
+    for msg in messages:
+        render_bubble(msg["role"], msg["content"], msg.get("trace"))
+        if msg["role"] == "assistant":
+            render_canteen_images(msg.get("trace"))
+
+    prompt = st.chat_input("请输入你的问题，例如：宿舍怎么分配？") or st.session_state.pop(
+        "pending_question", None
+    )
+
+    if prompt:
+        messages.append({"role": "user", "content": prompt})
+        render_bubble("user", prompt)
+
+        with st.spinner("思考中..."):
+            clean_msgs = [{"role": m["role"], "content": m["content"]} for m in messages]
+            try:
+                content, trace = chat_with_trace(clean_msgs, client)
+            except Exception as e:
+                name = type(e).__name__
+                if "Timeout" in name or "timeout" in str(e).lower():
+                    content = "回答超时了，可能是服务暂时繁忙。请稍等几秒再点一次发送重试～"
+                else:
+                    content = f"出错了：{e}\n\n请检查 config.py 里的接口地址、API Key 和模型名称是否正确。"
+                trace = []
+
+        render_bubble("assistant", content, trace)
+        render_canteen_images(trace)
+        messages.append({"role": "assistant", "content": content, "trace": trace})
+
+        if cur_sess["title"] == "新对话":
+            first_user = next((m["content"] for m in messages if m["role"] == "user"), "")
+            if first_user:
+                cur_sess["title"] = first_user[:16]
+
+        st.rerun()
+
+
+# ============ 失物招领 ============
+
+STATUS_LABEL = {"open": "🟡 待处理", "matched": "🟢 已匹配", "resolved": "✅ 已找回"}
+
+
+def _do_insert(data: dict):
+    token = lost_found.generate_token()
+    data["secret_token"] = token
+    try:
+        row = lost_found.insert_post(data)
+        return True, None, row
+    except Exception as e:
+        return False, str(e), None
+
+
+def _render_voice_publish(client):
+    st.markdown("**💬 用一句话描述**：智能体自动提取并帮你发布。")
+    draft_text = st.text_input("例如：我在图书馆三楼丢了校园卡，蓝色卡套", key="lf_voice")
+    if st.button("🔍 智能提取", key="lf_extract"):
+        if not draft_text.strip():
+            st.warning("先输入一句话描述。")
+        else:
+            with st.spinner("提取中..."):
+                data = extract_lostfound(draft_text, client)
+            if data and data.get("type") in ("lost", "found"):
+                st.session_state.lf_draft = data
+                st.rerun()
+            else:
+                st.error("没提取成功，请换用下方表单。")
+
+    draft = st.session_state.get("lf_draft")
+    if draft:
+        with st.container(border=True):
+            kind = "🔍 寻物" if draft.get("type") == "lost" else "📌 拾到"
+            st.markdown(f"**{kind}（提取结果，确认后发布）**")
+            st.markdown(f"- 物品：{draft.get('item_type') or '未识别'}")
+            st.markdown(f"- 标题：{draft.get('title') or '（未命名）'}")
+            st.markdown(f"- 地点：{draft.get('location') or '未注明'}")
+            st.markdown(f"- 时间：{draft.get('lost_time') or '未注明'}")
+            st.markdown(f"- 联系方式：{draft.get('contact') or '未注明'}")
+            if draft.get("description"):
+                st.markdown(f"- 描述：{draft['description']}")
+            c_ok, c_cancel = st.columns([1, 1])
+            if c_ok.button("✅ 确认发布", key="lf_confirm"):
+                payload = {
+                    "type": draft.get("type"),
+                    "item_type": draft.get("item_type") or "其他",
+                    "title": draft.get("title") or "未命名物品",
+                    "description": draft.get("description") or "",
+                    "location": draft.get("location") or "",
+                    "lost_time": draft.get("lost_time") or "",
+                    "contact": draft.get("contact") or "",
+                    "secret_question": "",
+                    "secret_answer": "",
+                    "status": "open",
+                }
+                ok, err, row = _do_insert(payload)
+                if ok:
+                    st.session_state.pop("lf_draft", None)
+                    st.session_state.setdefault("lf_tokens", {})[row["id"]] = payload["secret_token"]
+                    st.session_state.lf_last_token = payload["secret_token"]
+                    st.success(f"已发布到频道！发布口令：`{payload['secret_token']}`（记下它，用于管理这条帖子）")
+                    st.rerun()
+                else:
+                    st.error(f"发布失败：{err}")
+            if c_cancel.button("取消", key="lf_cancel"):
+                st.session_state.pop("lf_draft", None)
+                st.rerun()
+
+
+def _render_form_publish():
+    with st.form("lf_form"):
+        type_label = st.radio("类型", ["寻物启事（我丢了）", "拾到物品（我捡到了）"], horizontal=True)
+        item_type = st.selectbox("物品类型", lost_found.ITEM_TYPES)
+        title = st.text_input("物品名称/标题", placeholder="如：校园卡")
+        location = st.text_input("地点", placeholder="如：图书馆三楼")
+        lost_time = st.text_input("时间", placeholder="如：今天下午")
+        contact = st.text_input("联系方式", placeholder="手机/微信，认领时用")
+        description = st.text_area("描述", placeholder="颜色、特征等，越具体越容易匹配")
+        is_found = type_label.startswith("拾到")
+        secret_q, secret_a = "", ""
+        if is_found:
+            st.markdown("**防冒领（可选）**：设一个只有失主答得上来的问题")
+            secret_q = st.text_input("验证问题", placeholder="如：卡背面贴了什么图案？")
+            secret_a = st.text_input("答案", placeholder="如：小恐龙贴纸")
+        submitted = st.form_submit_button("发布", use_container_width=True)
+
+    if submitted:
+        if not title.strip():
+            st.warning("至少填一个物品名称。")
+        else:
+            payload = {
+                "type": "found" if is_found else "lost",
+                "item_type": item_type,
+                "title": title.strip(),
+                "description": description.strip(),
+                "location": location.strip(),
+                "lost_time": lost_time.strip(),
+                "contact": contact.strip(),
+                "secret_question": secret_q.strip(),
+                "secret_answer": secret_a.strip(),
+                "status": "open",
+            }
+            ok, err, row = _do_insert(payload)
+            if ok:
+                st.session_state.setdefault("lf_tokens", {})[row["id"]] = payload["secret_token"]
+                st.session_state.lf_last_token = payload["secret_token"]
+                st.success(f"已发布到频道！发布口令：`{payload['secret_token']}`（记下它，用于管理这条帖子）")
+                st.rerun()
+            else:
+                st.error(f"发布失败：{err}")
+
+
+def _render_post_card(p):
+    kind = "🔍 寻物" if p.get("type") == "lost" else "📌 拾到"
+    status = STATUS_LABEL.get(p.get("status"), p.get("status"))
+    with st.container(border=True):
+        st.markdown(f"{kind}　**{p.get('title')}**　`{p.get('item_type')}`　{status}")
+        meta = []
+        if p.get("location"):
+            meta.append(f"📍 {p['location']}")
+        if p.get("lost_time"):
+            meta.append(f"🕐 {p['lost_time']}")
+        if meta:
+            st.caption("　".join(meta))
+        if p.get("description"):
+            st.markdown(p["description"])
+
+        if p.get("type") == "found" and p.get("secret_question"):
+            with st.expander("🔐 认领（回答验证问题解锁联系方式）"):
+                ans = st.text_input("你的答案", key=f"claim_{p['id']}")
+                if ans:
+                    if ans.strip() == (p.get("secret_answer") or "").strip():
+                        st.success(f"验证通过！联系方式：{p.get('contact') or '（未留）'}")
+                        st.caption("双方确认后可点下方「标记已找回」。")
+                    else:
+                        st.warning("答案不对，再想想～")
+        elif p.get("contact"):
+            st.caption(f"📞 联系方式：{p['contact']}")
+
+        if p.get("status") != "resolved":
+            _render_manage_area(p)
+
+
+def _render_manage_area(p):
+    """发布者口令门控：只有知道口令的人能管理这条帖子（标记匹配/找回/确认）。"""
+    pid = p["id"]
+    tokens = st.session_state.setdefault("lf_tokens", {})
+    authed = tokens.get(pid) == (p.get("secret_token") or "")
+
+    if not authed:
+        with st.expander("🔑 我是发布者，管理这条帖子"):
+            st.caption("发布时下发的 6 位数字口令。演示示例数据统一为 123456。")
+            entered = st.text_input("发布口令", key=f"token_{pid}", placeholder="6 位数字口令")
+            if st.button("验证", key=f"tokengate_{pid}"):
+                if entered.strip() == (p.get("secret_token") or "").strip():
+                    tokens[pid] = entered.strip()
+                    st.success("口令正确，现在可以管理这条帖子了。")
+                    st.rerun()
+                else:
+                    st.error("口令不对。")
+        return
+
+    if p.get("status") == "open":
+        with st.expander("🔍 智能匹配"):
+            matches = lost_found.find_matches(p)
+            if not matches:
+                st.caption("暂未找到疑似匹配，可稍后刷新。")
+            for m in matches:
+                mp = m["post"]
+                with st.container(border=True):
+                    st.markdown(
+                        f"**{mp.get('title')}**（{mp.get('item_type')}）　置信度 `{m['confidence']}%`"
+                    )
+                    for r in m["reasons"]:
+                        st.caption(f"· {r}")
+                    if mp.get("location"):
+                        st.caption(f"📍 {mp['location']}")
+                    if mp.get("contact"):
+                        st.caption(f"📞 {mp['contact']}")
+                    if st.button("✅ 标记双方已匹配", key=f"match_{pid}_{mp['id']}"):
+                        try:
+                            lost_found.update_post(pid, {"status": "matched", "matched_with": mp["id"]})
+                            lost_found.update_post(mp["id"], {"status": "matched", "matched_with": pid})
+                            st.session_state.lf_announcement = (
+                                f"🔔 成理小助手已为「{p.get('title')}」和「{mp.get('title')}」牵线成功，"
+                                f"双方可互看联系方式联系认领～"
+                            )
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"失败：{e}")
+
+        if st.button("✅ 标记已找回", key=f"resolve_{pid}"):
+            try:
+                lost_found.update_post(pid, {"status": "resolved"})
+                st.rerun()
+            except Exception as e:
+                st.error(f"失败：{e}")
+
+    elif p.get("status") == "matched":
+        if p.get("confirmed"):
+            st.caption("本方已确认 ✅，等待对方确认")
+        else:
+            confirm_label = "✅ 失主确认：已拿回" if p.get("type") == "lost" else "✅ 拾到者确认：已交还"
+            if st.button(confirm_label, key=f"confirm_{pid}"):
+                try:
+                    msg, both = lost_found.confirm_and_resolve(pid)
+                    if both:
+                        st.session_state.lf_announcement = "🎉 双方确认完成，物品已找回！"
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"失败：{e}")
+
+
+def _render_feed():
+    f_type = st.radio("筛选", ["全部", "寻物", "拾到"], horizontal=True, key="lf_filter")
+    type_map = {"全部": None, "寻物": "lost", "拾到": "found"}
+    posts = lost_found.list_posts(type_filter=type_map[f_type], status_filter=None, limit=100)
+    if not posts:
+        st.info("频道还没有帖子，去发布一条吧，或用「演示模式」灌入示例数据。")
+        return
+    st.caption(f"共 {len(posts)} 条")
+    for p in posts:
+        _render_post_card(p)
+
+
+def render_lost_found(client):
+    st.markdown("#### 📦 失物招领 · 共享频道")
+
+    if not lost_found.is_configured():
+        st.warning("Supabase 还没配置，失物招领暂时不可用。")
+        st.markdown(
+            "**三步配置**\n"
+            "1. 到 [supabase.com](https://supabase.com) 建一个免费项目。\n"
+            "2. 打开项目 **SQL Editor**，把 `supabase_schema.sql` 的内容粘进去执行一次。\n"
+            "3. 在 **Settings → API** 复制 `Project URL` 和 `anon public` key，填到 "
+            "`.streamlit/secrets.toml`（本地）或 Streamlit Cloud 的 Secrets（云端）："
+        )
+        st.code(
+            'SUPABASE_URL = "https://xxxx.supabase.co"\n'
+            'SUPABASE_ANON_KEY = "eyJ..."',
+            language="toml",
+        )
+        return
+
+    if st.session_state.get("lf_announcement"):
+        st.markdown(
+            '<div style="padding:12px 16px;border-radius:12px;background:#eaf2d8;'
+            'border:1px solid #c8d9b0;color:#5c554c;font-size:14px;">'
+            + html.escape(st.session_state.lf_announcement)
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("清除公告", key="lf_clear_announce"):
+            st.session_state.pop("lf_announcement", None)
+            st.rerun()
+        st.write("")
+
+    if st.session_state.get("lf_tokens"):
+        with st.expander("🔑 我的发布口令（本机会话内记住）"):
+            for pid, tok in st.session_state.lf_tokens.items():
+                st.write(f"口令 `{tok}`（帖子 id 尾号 …{str(pid)[-4:]}）")
+
+    c1, c2 = st.columns([1, 1])
+    if c1.button("🔄 演示模式：重置示例数据", use_container_width=True):
+        with st.spinner("重置中..."):
+            try:
+                n = lost_found.seed_demo()
+                st.success(f"已重置并灌入 {n} 条示例数据")
+            except Exception as e:
+                st.error(f"失败：{e}")
+        st.rerun()
+    with c2.expander("📍 失物高发点"):
+        hot = lost_found.hot_locations()
+        if hot:
+            for loc, cnt in hot[:6]:
+                st.write(f"**{loc}** · {cnt} 条")
+        else:
+            st.caption("暂无数据")
+
+    st.divider()
+
+    st.markdown("#### ✍️ 发布信息")
+    pub_chat, pub_form = st.tabs(["💬 口语发布", "📋 表单发布"])
+    with pub_chat:
+        _render_voice_publish(client)
+    with pub_form:
+        _render_form_publish()
+
+    st.divider()
+
+    st.markdown("#### 📋 频道")
+    _render_feed()
+
+
+def _render_kaoyan_customizer():
+    """考研个性化定制：收集几个信息，生成专属考研复习计划。"""
+    with st.expander("🎓 考研个性化定制", expanded=False):
+        st.caption("填几个信息，帮你生成专属考研复习计划")
+        grade = st.selectbox("年级", ["大一", "大二", "大三", "大四"], key="ky_grade")
+        major = st.text_input("专业", placeholder="如：计算机科学与技术", key="ky_major")
+        target = st.text_input("目标院校 / 方向", placeholder="如：电子科技大学 · 计算机", key="ky_target")
+        cross = st.radio("是否跨考", ["本专业", "跨考"], horizontal=True, key="ky_cross")
+        hours = st.selectbox(
+            "每天可学习时长", ["2 小时以内", "3-4 小时", "5-6 小时", "6 小时以上"], key="ky_hours"
+        )
+        if st.button("生成定制计划", use_container_width=True, key="ky_submit"):
+            if not target.strip():
+                st.warning("至少填一下目标院校/方向。")
+            else:
+                q = (
+                    f"我想考研，请帮我做一份个性化考研定制计划。我的情况：{grade}，"
+                    f"{major.strip() or '未填'}专业，{cross}，目标院校/方向是{target.strip()}，"
+                    f"每天大约能学{hours}。请按择校、公共课、专业课、报名、初试、复试分阶段定制，"
+                    f"公共课和专业课分科给重点，并给作息建议。"
+                )
+                st.session_state.pending_question = q
+                st.session_state.view = "chat"
+                st.rerun()
+
+
+def _render_about():
+    """侧边栏：智能体能力介绍。"""
+    with st.expander("📖 关于成理小助手"):
+        st.markdown(
+            "**成理小助手**是面向成都理工大学同学的校园智能体，专注几件事：\n\n"
+            "- 🏫 **校园生活**：报到、军训、选课、宿舍等 FAQ\n"
+            "- 🍜 **食堂攻略**：芙蓉餐厅档口、轻食、按预算推荐\n"
+            "- 🎓 **保研/考研规划**：分阶段规划、个性化定制\n"
+            "- 📦 **失物招领**：共享频道发布、浏览、智能匹配\n"
+            "- 🗺️ **校园导览** · 🌤️ **天气** · 🎪 **活动**"
+        )
+
+
 st.set_page_config(page_title="成理小助手", page_icon="🎓", layout="centered")
 st.markdown(MORANDI_CSS, unsafe_allow_html=True)
 
@@ -284,6 +691,8 @@ st.markdown(MORANDI_CSS, unsafe_allow_html=True)
 if "sessions" not in st.session_state:
     st.session_state.sessions = {}
     st.session_state.current_id = new_session()
+if "view" not in st.session_state:
+    st.session_state.view = "chat"
 
 client = get_client()
 
@@ -300,7 +709,12 @@ with st.sidebar:
 
     if st.button("➕ 新建对话", use_container_width=True):
         st.session_state.current_id = new_session()
+        st.session_state.view = "chat"
         st.rerun()
+
+    st.divider()
+
+    _render_kaoyan_customizer()
 
     st.divider()
 
@@ -320,11 +734,17 @@ with st.sidebar:
             col1, col2 = st.columns([5, 1])
             if col1.button(mark + title[:14], key=f"switch_{sid}", use_container_width=True):
                 st.session_state.current_id = sid
+                st.session_state.view = "chat"
                 st.rerun()
             if col2.button("🗑", key=f"del_{sid}", help="删除该会话"):
                 del st.session_state.sessions[sid]
                 if st.session_state.current_id == sid:
-                    st.session_state.current_id = None
+                    remaining = sorted(
+                        st.session_state.sessions.keys(),
+                        key=lambda k: st.session_state.sessions[k].get("created_at", ""),
+                        reverse=True,
+                    )
+                    st.session_state.current_id = remaining[0] if remaining else new_session()
                 st.rerun()
 
     st.divider()
@@ -333,7 +753,12 @@ with st.sidebar:
     for q in PRESET_QUESTIONS:
         if st.button(q, key=f"preset_{q}", use_container_width=True):
             st.session_state.pending_question = q
+            st.session_state.view = "chat"
             st.rerun()
+
+    st.divider()
+
+    _render_about()
 
     st.divider()
 
@@ -364,37 +789,12 @@ if client is None:
     st.warning("还没有配置 API Key。请打开 `config.py`，把密钥填进 `API_KEY`，再重新运行。")
     st.stop()
 
-cur_sess = st.session_state.sessions[st.session_state.current_id]
-messages = cur_sess["messages"]
-
-# 显示历史消息
-for msg in messages:
-    render_bubble(msg["role"], msg["content"], msg.get("trace"))
-
-# 处理输入：优先聊天框，其次预设问题
-prompt = st.chat_input("请输入你的问题，例如：宿舍怎么分配？") or st.session_state.pop(
-    "pending_question", None
+view = st.segmented_control(
+    "功能", ["💬 智能问答", "📦 失物招领"], default="💬 智能问答", label_visibility="collapsed"
 )
+view = view or "💬 智能问答"
 
-if prompt:
-    messages.append({"role": "user", "content": prompt})
-    render_bubble("user", prompt)
-
-    with st.spinner("思考中..."):
-        clean_msgs = [{"role": m["role"], "content": m["content"]} for m in messages]
-        try:
-            content, trace = chat_with_trace(clean_msgs, client)
-        except Exception as e:
-            content = f"出错了：{e}\n\n请检查 config.py 里的接口地址、API Key 和模型名称是否正确。"
-            trace = []
-
-    render_bubble("assistant", content, trace)
-    messages.append({"role": "assistant", "content": content, "trace": trace})
-
-    # 首次问答后，用第一个问题作为会话标题
-    if cur_sess["title"] == "新对话":
-        first_user = next((m["content"] for m in messages if m["role"] == "user"), "")
-        if first_user:
-            cur_sess["title"] = first_user[:16]
-
-    st.rerun()
+if view == "💬 智能问答":
+    render_chat(client)
+else:
+    render_lost_found(client)

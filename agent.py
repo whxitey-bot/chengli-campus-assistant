@@ -15,31 +15,44 @@ from openai import OpenAI
 import httpx
 
 import config
-from knowledge_base import search_faq, search_activity, campus_tour
+from knowledge_base import (
+    search_faq, search_activity, search_baoyan, campus_tour,
+    search_canteen, canteen_images, match_canteen,
+    canteen_overview, canteen_light, canteen_by_budget,
+)
+import lost_found
 
 # 系统提示词：定义这个智能体的「人设」和职责
-SYSTEM_PROMPT = f"""你是「{config.SCHOOL_NAME}」的校园助手「成理小助手」，一个热情、耐心、靠谱的智能体，像熟悉学校每个角落的学长学姐，专门帮同学解决入学和校园生活问题。
-
-【学校背景】
-成都理工大学是国家"双一流"建设高校，教育部与四川省共建，前身是1956年创办的成都地质勘探学院，2001年更名。学校以地质、能源、资源、核技术、环境为优势学科，"地质资源与地质工程"入选国家"双一流"建设学科。现有成都（成华区二仙桥东三路1号）和宜宾两个校区。
+SYSTEM_PROMPT = f"""你是「{config.SCHOOL_NAME}」的校园助手「成理小助手」，像熟悉学校每个角落的学长学姐，热情、耐心、靠谱，专门帮同学解决入学和校园生活问题。
 
 【核心规则】
-1. 涉及校园事实，必须严格依据本轮提供的【检索结果】回答，绝不编造检索结果里没有的地标、菜品、设施、数据等任何细节。检索结果不足时，诚实说明"知识库暂无相关信息"，并建议咨询辅导员或对应部门。
-2. 纯问候、闲聊、感谢等非事实类问题，友好回应即可，无需引用检索结果。
-3. 问题模糊时礼貌追问澄清，不瞎猜。
+1. 校园事实必须严格依据本轮【检索结果】回答，绝不编造检索结果里没有的细节；不足时诚实说明"知识库暂无相关信息"，建议咨询辅导员或对应部门。
+2. 纯问候、闲聊、感谢等非事实问题友好回应即可，无需引用检索结果。
+3. 问题模糊时礼貌追问，不瞎猜。
+4. 学校名必须写「成都理工大学」或简称「成理」，绝不可写成别的校名（如"德州理工""成都理工大"等错误写法）。
 
 【分场景 SOP】
-- 报到引导：先问清"报到前"还是"当天"→ 给对应清单（迎新网 yx.cdut.edu.cn 线上报到、带录取通知书/身份证/档案）→ 提醒报到地址与招生办电话 028-84078927。
-- 军训准备：约14天、不剪头发 → 给准备清单（防晒霜/水杯/舒适运动鞋/换洗衣物）→ 提醒防晒补水。
-- 选课指导：分预选、正选两阶段 → 提醒热门课要抢、关注教务处通知。
-- 校园活动：按「活动名 + 时间 + 地点 + 亮点」介绍，查不到就建议关注团委、教务处通知。
-- 校园导览：按游览顺序讲解，讲清"在哪里 + 有什么看点/小故事"（如砚湖是师生徒手挖成、桐荫路是 TFboys《heart》MV 拍摄地）。
-- 学习规划：先问清专业、年级、目标（考研/保研/期末/就业）和可用时间 → 再给出分阶段计划，结构固定包含：① 阶段划分（基础/强化/冲刺）② 每周目标 ③ 每日任务（早/中/晚）④ 各科重点 ⑤ 作息表 ⑥ 实用建议。
+- 报到：问清"报到前/当天"，给材料清单（迎新网 yx.cdut.edu.cn、录取通知书/身份证/档案），招生办 028-84078927。
+- 军训：约14天不剪头发，备防晒霜/水杯/运动鞋/换洗衣物，注意防晒补水。
+- 选课：分预选正选两阶段，热门课要抢，关注教务处通知。
+- 活动：按「名称+时间+地点+亮点」介绍，查不到建议关注团委/教务处通知。
+- 导览：按游览顺序讲"在哪里+看点"（砚湖师生徒手挖成、桐荫路是TFboys MV拍摄地）。
+- 食堂：严格依据【食堂档口检索】推荐，档口名称/菜品/价格/供应时间只说检索结果里明确有的；本知识库只收录芙蓉餐厅档口，其他餐厅（香樟/银杏/珙桐等）的具体档口信息暂无，不要自行补写；价格筛选、轻食推荐均以检索结果为准。
+- 失物招领：严格依据【失物招领频道】检索结果回答"有没有人捡到/丢了XX"；查不到就说频道暂无相关记录，并建议去「失物招领」页发布或登记；绝不编造帖子。若用户想发布寻物/拾到信息，引导其到「失物招领」页填写。
+- 学习规划：先问专业/年级/目标/时间，给分阶段计划（阶段划分+周目标+每日任务+各科重点+作息+建议）。
+- 保研：严格基于【检索结果】的分阶段规划（大一绩点→大二科研竞赛→大三夏令营→大四推免）、院校推荐和官方链接回答，结构为「时间线+院校推荐+官方链接」。注意：「X级」指 20XX 年入学（如 24级=2024年入学），要按当前年份换算成年级，不要望文生义把「24级」当成大一。若【检索结果】给出用户当前年级，就从该年级讲起、重点规划该年级及之后的阶段，不要从大一重复讲。不编造具体院校排名数字，招生政策以研招网和官网为准。
+- 考研：按「择校→公共课（政治/英语/数学）→专业课→报名（9-10月）→初试（12月底）→复试（次年3-4月）」分阶段规划，结合用户年级、专业、目标院校、是否跨考、每日可学习时长定制；公共课和专业课分科给重点与节奏；政治不宜过早开始、英语坚持每日单词+真题、专业课以目标院校参考书目为准；跨考要额外补专业课基础。
+
+【自我介绍】
+当用户问「你能做什么 / 你有什么功能 / 介绍一下你自己 / 你是谁」时，先一句话定位，再用下面几点分点介绍自己（可少量 emoji）：
+- 🏫 校园生活：新生报到、军训、选课、宿舍等校园 FAQ。
+- 🍜 食堂攻略：芙蓉餐厅档口、轻食健康餐、按预算推荐。
+- 🎓 保研/考研规划：分阶段规划、院校推荐、个性化定制计划。
+- 📦 失物招领：共享频道发布、浏览、智能匹配。
+- 🗺️ 校园导览、🌤️ 天气、🕐 时间、🎪 校园活动。
 
 【回答风格】
-- 中文，语气亲切像学长学姐。
-- 先给结论，再补充必要说明。
-- 可少量 emoji 让语气更友好。
+中文、亲切像学长学姐，先结论后说明，可少量 emoji。
 """
 
 
@@ -126,6 +139,28 @@ TOUR_KW = ["逛校园", "导览", "游览", "路线", "校园景点", "地标", 
            "参观", "逛一逛", "游校园"]
 ACTIVITY_KW = ["活动", "比赛", "讲座", "社团", "招新", "晚会", "校运会", "音乐节",
                "运动会", "竞赛", "展览", "宣讲", "答辩"]
+BAOYAN_KW = ["保研", "推免", "夏令营", "预推免", "九推", "考研", "读研", "研究生",
+             "深造", "目标院校", "导师", "绩点排名", "优秀营员"]
+CANTEEN_KW = ["食堂", "餐厅", "吃饭", "吃什么", "吃啥", "好吃的", "美食", "档口",
+              "菜单", "菜品", "夜宵", "外卖", "早餐", "午餐", "晚餐", "芙蓉",
+              "全家", "瑞幸", "咖啡", "蜜雪冰城", "麦当劳", "汉堡", "名创优品",
+              "螺蛳粉", "冒菜", "麻辣烫", "鸡公煲", "饺子", "云吞", "馄饨", "抄手",
+              "牛肉面", "拉面", "小面", "煎饼", "水果捞", "奶茶", "冰淇淋",
+              "手撕鸡", "捞饭", "铁锅炖", "鸭脖", "卤味", "醉鸡", "豌杂面", "渔粉",
+              "擂椒饭", "三明治", "轻食", "沙拉",
+              "减肥", "减脂", "低卡", "低脂", "清淡", "瘦身", "预算", "多少钱", "价格"]
+
+# 轻食/减肥场景关键词（在食堂意图内细分）
+LIGHT_KW = ["减肥", "减脂", "轻食", "低卡", "低脂", "清淡", "瘦身", "控制体重", "热量", "健康"]
+
+# 餐厅总览场景关键词（问「一共几个档口 / 有哪些店」）
+OVERVIEW_KW = ["几个档口", "多少档口", "多少个档口", "哪些档口", "有什么档口", "有哪些档口",
+               "都有什么", "有些什么", "都有啥", "有些啥", "有哪些店", "有什么店",
+               "介绍一下", "总览", "全部", "都有哪些", "档口吗"]
+
+# 失物招领关键词（丢了/捡到 → 检索频道或引导发布）
+LOSTFOUND_KW = ["丢了", "遗失", "丢失", "掉了", "找不到", "不见了", "忘在", "落下",
+                "捡到", "拾到", "捡了", "招领", "寻物", "失物", "丢东西"]
 CITY_NAMES = ["成都", "宜宾", "北京", "上海", "广州", "深圳", "重庆", "杭州", "武汉",
               "西安", "南京", "天津", "苏州", "长沙", "郑州"]
 
@@ -142,6 +177,12 @@ def detect_intents(query: str):
         intents.append("tour")
     if any(k in q for k in ACTIVITY_KW):
         intents.append("activity")
+    if any(k in q for k in BAOYAN_KW):
+        intents.append("baoyan")
+    if any(k in q for k in CANTEEN_KW):
+        intents.append("canteen")
+    if any(k in q for k in LOSTFOUND_KW):
+        intents.append("lostfound")
     return intents
 
 
@@ -152,20 +193,132 @@ def extract_city(query: str) -> str:
     return "成都"
 
 
-def build_context(query: str):
-    """执行工作流：检索知识库 + 按意图调用工具，返回 (上下文文本, trace)。"""
+def extract_budget(query: str):
+    """提取预算金额（元）。只在出现明确预算信号时返回，避免把「手撕鸡饭12元」误判成预算。
+
+    支持：「预算10元」「10元以内/以下」「10块钱以内」「不超过15元」等。
+    """
+    text = query or ""
+    m = re.search(r"预算(?:是|为|在|大概|大约|约)?\s*(\d+(?:\.\d+)?)", text)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"(\d+(?:\.\d+)?)\s*元\s*(?:以内|以下|左右|之内|上下)", text)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"(\d+(?:\.\d+)?)\s*块(?:钱)?\s*(?:以内|以下|左右|之内)", text)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"(?:不超过|控制在|最多|上限)\s*(\d+(?:\.\d+)?)\s*元", text)
+    if m:
+        return float(m.group(1))
+    return None
+
+
+GRADE_CN = {1: "大一", 2: "大二", 3: "大三", 4: "大四"}
+_GRADE_DIGIT = {"一": 1, "二": 2, "三": 3, "四": 4, "1": 1, "2": 2, "3": 3, "4": 4}
+
+
+def infer_grade(text: str):
+    """从文本推断用户当前年级，返回中文年级（如"大三"）或 None。
+
+    支持两种写法：
+    - 直接写"大三"/"大3"
+    - 写"24级"/"2024级"（入学年份），按当前年月推算年级
+    """
+    text = text or ""
+    m = re.search(r"大([一二三四1-4])", text)
+    if m:
+        return GRADE_CN[_GRADE_DIGIT[m.group(1)]]
+
+    m = re.search(r"(20\d{2}|\d{2})级", text)
+    if m:
+        year = int(m.group(1))
+        if year < 100:
+            year += 2000
+        now = datetime.datetime.now()
+        grade = now.year - year + (1 if now.month >= 9 else 0)
+        if 1 <= grade <= 4:
+            return GRADE_CN[grade]
+    return None
+
+
+LOSTFOUND_EXTRACT_PROMPT = """你是失物招领信息提取助手。从用户口语描述里提取结构化信息，只返回一个 JSON 对象（不要任何多余文字、不要代码块标记）：
+{"type":"lost或found","item_type":"校园卡/手机/钱包/书籍/钥匙/雨伞/耳机/U盘/水杯/其他","title":"简短标题","location":"地点","lost_time":"时间","contact":"联系方式，可为空","description":"一段规范友好的描述"}
+判定规则：用户说"丢了/遗失/不见了/忘在"则 type=lost；说"捡到/拾到"则 type=found。item_type 从给定集合选最接近的；提取不到的字段填空字符串。"""
+
+
+def extract_lostfound(query: str, client):
+    """从口语描述提取失物招领结构化信息，返回 dict；失败或 client 为空时返回 {}。"""
+    if client is None or not query:
+        return {}
+    try:
+        resp = client.chat.completions.create(
+            model=config.MODEL,
+            messages=[
+                {"role": "system", "content": LOSTFOUND_EXTRACT_PROMPT},
+                {"role": "user", "content": query},
+            ],
+        )
+        text = resp.choices[0].message.content or ""
+        m = re.search(r"\{.*\}", text, re.S)
+        if not m:
+            return {}
+        data = json.loads(m.group(0))
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return {}
+
+
+def _route_canteen(query: str):
+    """食堂子场景路由，返回 (检索文本, 配图列表, 工具名)。
+
+    优先级：预算 → 轻食 → 具体档口 → 总览 → 招牌推荐兜底。
+    """
+    budget = extract_budget(query)
+    if budget is not None:
+        text, imgs = canteen_by_budget(budget)
+        return text, imgs, "canteen_budget"
+    if any(k in query for k in LIGHT_KW):
+        text, imgs = canteen_light()
+        return text, imgs, "canteen_light"
+    if match_canteen(query):
+        return search_canteen(query), canteen_images(query), "search_canteen"
+    if any(k in query for k in OVERVIEW_KW):
+        return canteen_overview(), [], "canteen_overview"
+    return search_canteen(query), canteen_images(query), "search_canteen"
+
+
+def build_context(query: str, recent: str = ""):
+    """执行工作流：检索知识库 + 按意图调用工具，返回 (上下文文本, trace)。
+
+    recent：最近几轮历史用户消息，用于多轮追问时保持意图识别不丢。
+    """
     parts = []
     trace = []
-    intents = detect_intents(query)
+    # 意图识别结合最近历史，避免追问（如"可是我现在是大三"）丢失保研等意图
+    intents = detect_intents(f"{query} {recent}")
 
-    faq_res = search_faq(query)
-    trace.append({"tool": "search_faq", "args": {"question": query}})
-    parts.append("【校园知识库检索】\n" + faq_res)
+    # 保研/考研有专门的 search_baoyan，此时跳过通用 faq 检索，避免无关结果混入、拉长上下文
+    if "baoyan" not in intents:
+        faq_res = search_faq(query)
+        trace.append({"tool": "search_faq", "args": {"question": query}})
+        parts.append("【校园知识库检索】\n" + faq_res)
 
     if "activity" in intents:
         act_res = search_activity(query)
         trace.append({"tool": "search_activity", "args": {"query": query}})
         parts.append("【校园活动检索】\n" + act_res)
+
+    if "baoyan" in intents:
+        by_res = search_baoyan(f"{query} {recent}")
+        trace.append({"tool": "search_baoyan", "args": {"query": query}})
+        # 推断用户当前年级并前置，让模型聚焦该年级之后的阶段
+        grade = infer_grade(f"{query} {recent}")
+        if grade:
+            by_res = f"【用户当前年级】{grade}（从该年级讲起，重点规划之后阶段，不要从大一重复讲）\n" + by_res
+        parts.append("【保研/考研规划】\n" + by_res)
 
     if "tour" in intents:
         tour_res = campus_tour()
@@ -183,6 +336,17 @@ def build_context(query: str):
         trace.append({"tool": "get_current_time", "args": {}})
         parts.append("【当前时间】\n" + t_res)
 
+    if "canteen" in intents:
+        c_res, imgs, tool = _route_canteen(query)
+        trace.append({"tool": tool, "args": {"query": query}, "images": imgs})
+        parts.append("【食堂档口检索】\n" + c_res)
+
+    if "lostfound" in intents:
+        posts = lost_found.list_posts(status_filter="open", limit=20)
+        lf_res = lost_found.format_posts_for_llm(posts)
+        trace.append({"tool": "search_lostfound", "args": {"query": query}})
+        parts.append("【失物招领频道】\n" + lf_res)
+
     return "\n\n".join(parts), trace
 
 
@@ -191,8 +355,14 @@ def get_client():
     if not config.API_KEY:
         return None
     # trust_env=False：绕过系统代理（本机曾因走 127.0.0.1 代理导致 405/连接失败）
+    # timeout=60 + max_retries=1：网关偶发超时，失败后自动重试一次，最多约 120 秒
     http_client = httpx.Client(trust_env=False, timeout=60.0)
-    return OpenAI(base_url=config.BASE_URL, api_key=config.API_KEY, http_client=http_client)
+    return OpenAI(
+        base_url=config.BASE_URL,
+        api_key=config.API_KEY,
+        http_client=http_client,
+        max_retries=1,
+    )
 
 
 def chat_with_trace(messages: list, client: OpenAI):
@@ -200,19 +370,34 @@ def chat_with_trace(messages: list, client: OpenAI):
     query = messages[-1]["content"] if messages else ""
     history = messages[:-1]
 
-    context, trace = build_context(query)
+    recent = " ".join(m["content"] for m in history[-3:] if m["role"] == "user")
+    context, trace = build_context(query, recent)
+
+    grade = infer_grade(f"{query} {recent}")
+    grade_line = ""
+    if grade:
+        grade_line = f"\n（注意：用户当前就读 {grade}，这是已换算好的年级，请直接按 {grade} 及之后的阶段规划，不要从大一开始。）"
+
+    tools = [t.get("tool") for t in trace]
+    if "canteen_overview" in tools:
+        # 总览直接返回本地完整列表，避免大模型逐条复制 34 个档口导致生成慢、甚至超时
+        return "这是芙蓉餐厅的全部档口，按类别给你列好啦～\n\n" + canteen_overview(), trace
+    length_rule = "回答简洁精炼，控制在 300 字以内，重点突出，不要啰嗦（除非用户明确要求详细展开）。"
+    if any(t in ("search_canteen", "canteen_light", "canteen_budget") for t in tools):
+        length_rule = "请按检索结果给出的档口顺序逐一介绍，不要打乱顺序、不要遗漏；每个档口说清名称和关键菜品/价格即可，确保与下方配图一一对应。"
 
     user_prompt = f"""请严格根据下方【检索结果】回答用户的问题，务必遵守：
 1. 只能使用检索结果中明确出现的信息，绝不编造检索结果里没有的地标、菜品、设施、数据等任何细节。
 2. 如果检索结果不足以回答用户的问题，就诚实说明"知识库暂无相关信息"，并建议咨询辅导员或对应部门。
 3. 如果是纯问候、闲聊（如"你好""谢谢""再见"），友好回应即可，无需引用检索结果。
 4. 回答用中文，亲切自然，先给结论。
+5. {length_rule}
 
 【检索结果】
 {context}
 
 【用户问题】
-{query}
+{query}{grade_line}
 """
 
     full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history

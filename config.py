@@ -27,3 +27,11 @@ def _get_secret(name: str) -> str:
 
 # API Key：本地运行时填到 .streamlit/secrets.toml；部署时填到 Streamlit Cloud 的 Secrets。
 API_KEY = _get_secret("API_KEY")
+
+# Supabase（失物招领共享频道后端）：在 Supabase 项目里复制 URL 和 anon public key 填入。
+SUPABASE_URL = _get_secret("SUPABASE_URL")
+SUPABASE_ANON_KEY = _get_secret("SUPABASE_ANON_KEY")
+
+# Supabase 代理：本地直连 Supabase 被墙时，填本机代理（如 http://127.0.0.1:7890）；
+# 部署到 Streamlit Cloud 时留空即可，云端能直连 Supabase。
+SUPABASE_PROXY = _get_secret("SUPABASE_PROXY")
