@@ -411,7 +411,6 @@ def _render_voice_publish(client):
                     st.session_state.pop("lf_draft", None)
                     st.session_state.setdefault("lf_tokens", {})[row["id"]] = payload["secret_token"]
                     st.session_state.lf_last_token = payload["secret_token"]
-                    st.success(f"已发布到频道！发布口令：`{payload['secret_token']}`（记下它，用于管理这条帖子）")
                     st.rerun()
                 else:
                     st.error(f"发布失败：{err}")
@@ -457,7 +456,6 @@ def _render_form_publish():
             if ok:
                 st.session_state.setdefault("lf_tokens", {})[row["id"]] = payload["secret_token"]
                 st.session_state.lf_last_token = payload["secret_token"]
-                st.success(f"已发布到频道！发布口令：`{payload['secret_token']}`（记下它，用于管理这条帖子）")
                 st.rerun()
             else:
                 st.error(f"发布失败：{err}")
@@ -594,6 +592,21 @@ def render_lost_found(client):
             language="toml",
         )
         return
+
+    if st.session_state.get("lf_last_token"):
+        st.markdown(
+            '<div style="padding:14px 16px;border-radius:12px;background:#fff7e0;'
+            'border:1px solid #f0d9a0;color:#5c554c;font-size:15px;">'
+            "✅ 发布成功！你的<strong>发布口令</strong>是 "
+            f'<code style="font-size:20px;font-weight:700;letter-spacing:2px;">{html.escape(st.session_state.lf_last_token)}</code>'
+            "<br><span style='font-size:13px;color:#8a8075;'>记下它——之后「标记找回 / 双方确认」管理这条帖子要用，"
+            "不知道口令的人点不了管理按钮。换新帖子发布时会自动更新。</span></div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("我已记下", key="lf_dismiss_token"):
+            st.session_state.pop("lf_last_token", None)
+            st.rerun()
+        st.write("")
 
     if st.session_state.get("lf_announcement"):
         st.markdown(
