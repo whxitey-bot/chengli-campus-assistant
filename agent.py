@@ -164,6 +164,15 @@ LOSTFOUND_KW = ["丢了", "遗失", "丢失", "掉了", "找不到", "不见了"
 CITY_NAMES = ["成都", "宜宾", "北京", "上海", "广州", "深圳", "重庆", "杭州", "武汉",
               "西安", "南京", "天津", "苏州", "长沙", "郑州"]
 
+# 纯问候/闲聊：不继承历史里的食堂等意图，避免「问过食堂后再发你好」又弹出档口配图
+GREETING_KW = ["你好", "您好", "哈喽", "哈啰", "嗨", "hello", "hi", "hey",
+               "在吗", "谢谢", "多谢", "再见", "拜拜", "晚安", "早安", "你是谁"]
+
+
+def is_greeting(text: str) -> bool:
+    t = (text or "").strip().lower()
+    return any(k in t for k in GREETING_KW)
+
 
 def detect_intents(query: str):
     """按关键词判断需要调用的工具。"""
@@ -370,7 +379,9 @@ def chat_with_trace(messages: list, client: OpenAI):
     query = messages[-1]["content"] if messages else ""
     history = messages[:-1]
 
-    recent = " ".join(m["content"] for m in history[-3:] if m["role"] == "user")
+    recent = ""
+    if not is_greeting(query):
+        recent = " ".join(m["content"] for m in history[-3:] if m["role"] == "user")
     context, trace = build_context(query, recent)
 
     grade = infer_grade(f"{query} {recent}")
