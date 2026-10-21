@@ -4,6 +4,7 @@
 """
 import json
 import os
+import re
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "knowledge_base", "faq.json")
 ACTIVITIES_FILE = os.path.join(os.path.dirname(__file__), "knowledge_base", "activities.json")
@@ -38,16 +39,21 @@ CANTEEN = load_canteen()
 
 
 def search_faq(query: str, top_k: int = 3) -> str:
-    """检索知识库：按关键词命中数打分，返回最相关的几条。"""
+    """检索知识库：按关键词/短语命中数打分，返回最相关的几条。
+
+    只匹配 2 字及以上的中文短语，避免「问张三」「你好」这类问题被单字重叠误配到无关条目。
+    """
+    q = query or ""
+    phrases = re.findall(r"[一-龥]{2,}", q)
     scored = []
     for item in FAQ:
         score = 0
         for kw in item.get("keywords", []):
-            if kw in query:
+            if kw in q:
                 score += 3
-        # 问题标题里的字也有少量权重，帮助匹配同义表达
-        for ch in set(query):
-            if ch in item["question"]:
+        # 短语命中问题标题或关键词，帮助匹配同义表达
+        for ph in phrases:
+            if ph in item["question"] or any(ph in kw for kw in item.get("keywords", [])):
                 score += 1
         if score > 0:
             scored.append((score, item))
