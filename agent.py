@@ -203,6 +203,12 @@ def detect_intents(query: str):
     return intents
 
 
+# 追问式意图：需要继承最近几轮历史消息来保持意图（如「保研→可是我是大三」）。
+# 其余一次性查询（食堂/天气/时间/导览/活动）只从当前问题判断，避免历史里的食堂关键词
+# 污染无关提问（比如先问过食堂再问「帮我做保研计划」，却弹出食堂配图）。
+STICKY_INTENTS = ("baoyan", "faculty", "lostfound")
+
+
 def extract_city(query: str) -> str:
     for c in CITY_NAMES:
         if c in query:
@@ -314,8 +320,13 @@ def build_context(query: str, recent: str = ""):
     """
     parts = []
     trace = []
-    # 意图识别结合最近历史，避免追问（如"可是我现在是大三"）丢失保研等意图
-    intents = detect_intents(f"{query} {recent}")
+    # 当前这轮从「当前问题」判意图；只有追问式意图才继承历史消息，
+    # 食堂/天气/时间/导览/活动这类一次性查询不继承，避免历史关键词污染无关提问。
+    intents = list(detect_intents(query))
+    recent_intents = detect_intents(recent) if recent else []
+    for s in STICKY_INTENTS:
+        if s in recent_intents and s not in intents:
+            intents.append(s)
 
     # 保研/考研有专门的 search_baoyan，此时跳过通用 faq 检索，避免无关结果混入、拉长上下文
     if "baoyan" not in intents:
