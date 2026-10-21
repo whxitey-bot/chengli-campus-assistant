@@ -10,6 +10,7 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), "knowledge_base", "faq.json"
 ACTIVITIES_FILE = os.path.join(os.path.dirname(__file__), "knowledge_base", "activities.json")
 BAOYAN_FILE = os.path.join(os.path.dirname(__file__), "knowledge_base", "baoyan.json")
 CANTEEN_FILE = os.path.join(os.path.dirname(__file__), "knowledge_base", "canteen.json")
+FACULTY_FILE = os.path.join(os.path.dirname(__file__), "knowledge_base", "faculty.json")
 
 
 def load_faq():
@@ -32,10 +33,16 @@ def load_canteen():
         return json.load(f)
 
 
+def load_faculty():
+    with open(FACULTY_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 FAQ = load_faq()
 ACTIVITIES = load_activities()
 BAOYAN = load_baoyan()
 CANTEEN = load_canteen()
+FACULTY = load_faculty()
 
 
 def search_faq(query: str, top_k: int = 3) -> str:
@@ -65,6 +72,43 @@ def search_faq(query: str, top_k: int = 3) -> str:
     lines = []
     for _, item in scored[:top_k]:
         lines.append(f"【{item['category']}】{item['answer']}")
+    return "\n\n".join(lines)
+
+
+def search_faculty(query: str, top_k: int = 3) -> str:
+    """检索教师：按姓名/学院/研究方向关键词命中打分，返回教师简介。"""
+    q = query or ""
+    phrases = re.findall(r"[一-龥]{2,}", q)
+    scored = []
+    for item in FACULTY:
+        score = 0
+        if item.get("name") and item["name"] in q:
+            score += 5
+        for kw in item.get("keywords", []):
+            if kw in q:
+                score += 3
+        for ph in phrases:
+            if ph in item.get("name", "") or any(ph in kw for kw in item.get("keywords", [])):
+                score += 1
+        if score > 0:
+            scored.append((score, item))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    if not scored:
+        return "教师库中暂时没有收录这位老师，建议到学校教师个人主页平台（faculty.cdut.edu.cn）搜索确认。"
+
+    lines = []
+    for _, item in scored[:top_k]:
+        parts = [f"【{item['name']}】{item.get('title', '')}"]
+        if item.get("college"):
+            parts.append(f"单位：{item['college']}")
+        if item.get("research"):
+            parts.append(f"研究方向：{item['research']}")
+        if item.get("email"):
+            parts.append(f"邮箱：{item['email']}")
+        if item.get("intro"):
+            parts.append(f"简介：{item['intro']}")
+        lines.append("；".join(parts))
     return "\n\n".join(lines)
 
 

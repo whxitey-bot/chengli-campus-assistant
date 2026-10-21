@@ -36,6 +36,7 @@ TOOL_LABELS = {
     "get_weather": "🌤️ 查询天气",
     "get_current_time": "🕐 获取时间",
     "search_lostfound": "📦 检索失物招领频道",
+    "search_faculty": "👨‍🏫 检索教师库",
 }
 
 

@@ -18,7 +18,7 @@ import config
 from knowledge_base import (
     search_faq, search_activity, search_baoyan, campus_tour,
     search_canteen, canteen_images, match_canteen,
-    canteen_overview, canteen_light, canteen_by_budget,
+    canteen_overview, canteen_light, canteen_by_budget, search_faculty,
 )
 import lost_found
 
@@ -42,6 +42,7 @@ SYSTEM_PROMPT = f"""你是「{config.SCHOOL_NAME}」的校园助手「成理小�
 - 学习规划：先问专业/年级/目标/时间，给分阶段计划（阶段划分+周目标+每日任务+各科重点+作息+建议）。
 - 保研：严格基于【检索结果】的分阶段规划（大一绩点→大二科研竞赛→大三夏令营→大四推免）、院校推荐和官方链接回答，结构为「时间线+院校推荐+官方链接」。注意：「X级」指 20XX 年入学（如 24级=2024年入学），要按当前年份换算成年级，不要望文生义把「24级」当成大一。若【检索结果】给出用户当前年级，就从该年级讲起、重点规划该年级及之后的阶段，不要从大一重复讲。不编造具体院校排名数字，招生政策以研招网和官网为准。
 - 考研：按「择校→公共课（政治/英语/数学）→专业课→报名（9-10月）→初试（12月底）→复试（次年3-4月）」分阶段规划，结合用户年级、专业、目标院校、是否跨考、每日可学习时长定制；公共课和专业课分科给重点与节奏；政治不宜过早开始、英语坚持每日单词+真题、专业课以目标院校参考书目为准；跨考要额外补专业课基础。
+- 教师查询：严格依据【教师检索】回答老师的姓名、职称、学院、研究方向、邮箱等；若检索显示"教师库中暂时没有收录"，诚实说明没收录，建议到学校教师个人主页平台 faculty.cdut.edu.cn 查询，绝不编造老师姓名、职称、研究方向。
 
 【自我介绍】
 当用户问「你能做什么 / 你有什么功能 / 介绍一下你自己 / 你是谁」时，先一句话定位，再用下面几点分点介绍自己（可少量 emoji）：
@@ -49,6 +50,7 @@ SYSTEM_PROMPT = f"""你是「{config.SCHOOL_NAME}」的校园助手「成理小�
 - 🍜 食堂攻略：芙蓉餐厅档口、轻食健康餐、按预算推荐。
 - 🎓 保研/考研规划：分阶段规划、院校推荐、个性化定制计划。
 - 📦 失物招领：共享频道发布、浏览、智能匹配。
+- 👨‍🏫 教师查询：查老师的职称、学院、研究方向。
 - 🗺️ 校园导览、🌤️ 天气、🕐 时间、🎪 校园活动。
 
 【回答风格】
@@ -164,6 +166,10 @@ LOSTFOUND_KW = ["丢了", "遗失", "丢失", "掉了", "找不到", "不见了"
 CITY_NAMES = ["成都", "宜宾", "北京", "上海", "广州", "深圳", "重庆", "杭州", "武汉",
               "西安", "南京", "天津", "苏州", "长沙", "郑州"]
 
+# 教师查询关键词（问老师/教授/校长/书记/是谁 → 检索教师库）
+FACULTY_KW = ["老师", "教授", "副教授", "讲师", "导师", "院长", "副院长", "书记",
+              "辅导员", "班主任", "院士", "教师", "是谁", "哪位"]
+
 # 纯问候/闲聊：不继承历史里的食堂等意图，避免「问过食堂后再发你好」又弹出档口配图
 GREETING_KW = ["你好", "您好", "哈喽", "哈啰", "嗨", "hello", "hi", "hey",
                "在吗", "谢谢", "多谢", "再见", "拜拜", "晚安", "早安", "你是谁"]
@@ -192,6 +198,8 @@ def detect_intents(query: str):
         intents.append("canteen")
     if any(k in q for k in LOSTFOUND_KW):
         intents.append("lostfound")
+    if any(k in q for k in FACULTY_KW):
+        intents.append("faculty")
     return intents
 
 
@@ -355,6 +363,11 @@ def build_context(query: str, recent: str = ""):
         lf_res = lost_found.format_posts_for_llm(posts)
         trace.append({"tool": "search_lostfound", "args": {"query": query}})
         parts.append("【失物招领频道】\n" + lf_res)
+
+    if "faculty" in intents:
+        fc_res = search_faculty(f"{query} {recent}")
+        trace.append({"tool": "search_faculty", "args": {"query": query}})
+        parts.append("【教师检索】\n" + fc_res)
 
     return "\n\n".join(parts), trace
 
