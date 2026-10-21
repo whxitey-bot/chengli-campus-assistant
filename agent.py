@@ -388,8 +388,8 @@ def get_client():
     if not config.API_KEY:
         return None
     # trust_env=False：绕过系统代理（本机曾因走 127.0.0.1 代理导致 405/连接失败）
-    # timeout=60 + max_retries=1：网关偶发超时，失败后自动重试一次，最多约 120 秒
-    http_client = httpx.Client(trust_env=False, timeout=60.0)
+    # timeout=120：考研/保研这类分阶段规划会生成较长回答，网关又偶发慢，放宽到 120 秒避免误报超时
+    http_client = httpx.Client(trust_env=False, timeout=120.0)
     return OpenAI(
         base_url=config.BASE_URL,
         api_key=config.API_KEY,
@@ -441,6 +441,7 @@ def chat_with_trace(messages: list, client: OpenAI):
     response = client.chat.completions.create(
         model=config.MODEL,
         messages=full_messages,
+        max_tokens=2000,
     )
     message = response.choices[0].message
     return message.content or "", trace

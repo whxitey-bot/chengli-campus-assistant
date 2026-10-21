@@ -139,12 +139,20 @@ def search_activity(query: str, top_k: int = 3) -> str:
     return "\n\n".join(lines)
 
 
-def search_baoyan(query: str) -> str:
-    """保研/考研规划：返回分阶段规划、学科方向推荐与官方资料链接（紧凑格式，减少换行）。"""
-    data = BAOYAN
-    timeline = "；".join(f"{t['stage']}：{t['todo']}" for t in data["timeline"])
+# 考研（统考）关键词：与保研（推免）不同，考研不涉及夏令营/推免资格，检索时不塞保研时间线
+KAOYAN_KW = ["考研", "初试", "复试", "跨考", "报录比", "分数线", "统考", "备考"]
 
+
+def search_baoyan(query: str) -> str:
+    """保研/考研规划：返回分阶段规划、学科方向推荐与官方资料链接（紧凑格式，减少换行）。
+
+    考研与保研是两条路：考研走统考，不涉及夏令营/推免资格，所以考研提问只给院校推荐+官方链接，
+    具体复习计划交给系统提示词里的「考研 SOP」按【择校→公共课→专业课→报名→初试→复试】生成。
+    """
+    data = BAOYAN
     q = query or ""
+    is_kaoyan = any(k in q for k in KAOYAN_KW)
+
     matched = [d for d in data["directions"] if any(k in q for k in d.get("keywords", []))]
     if not matched:
         matched = data["directions"]
@@ -152,6 +160,10 @@ def search_baoyan(query: str) -> str:
 
     links = "；".join(f"{r['title']} {r['url']}（{r['desc']}）" for r in data["resources"])
 
+    if is_kaoyan:
+        return "【院校推荐】" + schools + "\n【官方链接】" + links
+
+    timeline = "；".join(f"{t['stage']}：{t['todo']}" for t in data["timeline"])
     return "【保研时间线】" + timeline + "\n【院校推荐】" + schools + "\n【官方链接】" + links
 
 
