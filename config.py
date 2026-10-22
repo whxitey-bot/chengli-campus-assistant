@@ -1,10 +1,10 @@
 import os
 
 # 比赛方提供的接口地址
-BASE_URL = os.getenv("BASE_URL", "http://sagalcc.cn:3002/v1")
+BASE_URL = os.getenv("BASE_URL", "http://61.188.36.255:18000/maas/v1")
 
 # 模型名称
-MODEL = os.getenv("MODEL", "dsv4")
+MODEL = os.getenv("MODEL", "DeepSeek-V4-Flash")
 
 # 学校名称：智能体会以这个身份回答问题
 SCHOOL_NAME = os.getenv("SCHOOL_NAME", "成都理工大学")
